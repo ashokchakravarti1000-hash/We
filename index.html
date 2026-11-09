@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wealth Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --ink:#1e293b; --muted:#64748b;
+    --accent:#4f46e5; --accent-soft:#eef2ff; --teal:#0d9488; --teal-soft:#f0fdfa;
+    --amber:#d97706; --rose:#e11d48; --border:#e2e8f0; --shadow:0 1px 3px rgba(15,23,42,.06),0 8px 24px rgba(15,23,42,.06);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+  header{background:linear-gradient(135deg,#4f46e5,#0d9488);color:#fff;padding:22px 24px}
+  .header-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .logo{width:52px;height:52px;padding:0;border:0;border-radius:50%;overflow:hidden;background:rgba(255,255,255,.16);box-shadow:inset 0 0 0 1px rgba(255,255,255,.28);display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:zoom-in;transition:background .2s,transform .2s,box-shadow .2s}
+  .logo:hover{background:rgba(255,255,255,.25);transform:translateY(-1px);box-shadow:inset 0 0 0 1px rgba(255,255,255,.28),0 5px 16px rgba(15,23,42,.16)}
+  .logo:focus-visible{outline:3px solid #fff;outline-offset:3px}
+  .logo img{width:100%;height:100%;margin:0;padding:0;border-radius:50%;object-fit:cover;object-position:center;display:block}
+  .logo-modal{width:100vw;height:100vh;height:100dvh;max-width:none;max-height:none;margin:0;padding:24px;border:0;background:transparent;color:#fff;place-items:center;overflow:hidden}
+  .logo-modal[open]{display:grid}
+  .logo-modal::backdrop{background:rgba(10,15,30,.24)}
+  .logo-modal-content{position:relative;width:100%;height:100%;display:grid;place-items:center}
+  .logo-modal-content img{display:block;width:min(78vw,78vh,680px);height:min(78vw,78vh,680px);object-fit:cover;object-position:center;border-radius:50%;box-shadow:0 24px 80px rgba(0,0,0,.32)}
+  @media(max-width:520px){.logo-modal{padding:16px}.logo-modal-content img{width:min(82vw,70vh);height:min(82vw,70vh)}}
+  header h1{font-size:1.25rem;font-weight:800;letter-spacing:-.02em}
+  header p{font-size:.8rem;opacity:.85;margin-top:2px}
+  .fx-pill{margin-left:auto;font-size:.72rem;font-weight:600;background:rgba(255,255,255,.16);padding:6px 12px;border-radius:99px;white-space:nowrap}
+  nav{max-width:1100px;margin:-18px auto 0;padding:0 24px;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;position:relative;z-index:2}
+  nav::-webkit-scrollbar{display:none}
+  nav button{flex-shrink:0;border:none;cursor:pointer;font-family:inherit;font-size:.83rem;font-weight:600;padding:10px 16px;border-radius:12px 12px 0 0;background:#e2e8f0;color:var(--muted);transition:.2s;display:flex;align-items:center;gap:7px;white-space:nowrap}
+  nav button .ic{font-size:1rem}
+  nav button:hover{background:#d5dcea}
+  nav button.active{background:var(--card);color:var(--accent);box-shadow:var(--shadow)}
+  main{max-width:1100px;margin:0 auto;padding:20px 24px 40px}
+  .module{display:none;animation:fade .3s ease}
+  .module.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .module-head{margin-bottom:16px}
+  .module-head h2{font-size:1.15rem;font-weight:700}
+  .module-head p{font-size:.85rem;color:var(--muted);margin-top:3px}
+  .grid{display:grid;grid-template-columns:340px 1fr;gap:16px;align-items:start}
+  .card{background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:20px}
+  .card h3{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:14px}
+  .card h3.input-cta{text-transform:none;letter-spacing:0;font-size:.9rem;color:var(--ink)}
+  .field{margin-bottom:16px}
+  .field label{display:flex;justify-content:space-between;font-size:.8rem;font-weight:600;color:var(--ink);margin-bottom:6px}
+  .field label span{color:var(--muted);font-weight:500}
+  .field-row{display:flex;gap:10px;align-items:center}
+  input[type=range]{flex:1;accent-color:var(--accent);height:4px;cursor:pointer}
+  input[type=number]{width:110px;padding:8px 10px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:.9rem;font-weight:600;color:var(--ink);background:#f8fafc;text-align:right}
+  input[type=number]:focus{outline:none;border-color:var(--accent);background:#fff}
+  select{width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:.9rem;background:#f8fafc;color:var(--ink)}
+  .cur-field{margin-bottom:16px}
+  .cur-field label{display:block;font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px}
+  .fx-note{margin-top:6px}
+  .results{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+  .pdf-download{display:inline-flex;align-items:center;gap:8px;margin:0 0 6px;padding:10px 14px;border:0;border-radius:10px;background:var(--accent);color:#fff;font:600 .82rem 'Inter',sans-serif;cursor:pointer;transition:background .2s,transform .2s}
+  .pdf-download:hover:not(:disabled){background:#4338ca;transform:translateY(-1px)}
+  .pdf-download:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+  .pdf-download:disabled{background:#cbd5e1;color:#64748b;cursor:not-allowed}
+  .pdf-download-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+  .pdf-download-row .pdf-download{margin:0}
+  .pdf-progress{--progress:0%;display:flex;align-items:center;gap:7px;color:var(--muted);font-size:.72rem;white-space:nowrap}
+  .pdf-progress-ring{width:42px;height:42px;flex:0 0 42px;padding:4px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--teal) var(--progress),var(--border) 0)}
+  .pdf-progress-value{width:100%;height:100%;border-radius:50%;background:#fff;color:var(--ink);display:grid;place-items:center;font-size:.62rem;font-weight:800}
+  .pdf-progress-label{font-weight:600}
+  .pdf-open{padding:9px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;color:var(--accent);font:600 .82rem 'Inter',sans-serif;cursor:pointer;transition:background .2s,transform .2s}
+  .pdf-open:hover:not(:disabled){background:var(--accent-soft);transform:translateY(-1px)}
+  .pdf-open:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+  .pdf-open:disabled{color:var(--muted);cursor:not-allowed}
+  .pdf-open[hidden]{display:none}
+  .pdf-download-status{font-size:.75rem;color:var(--muted);margin:0 0 14px}
+  .stat{background:var(--accent-soft);border-radius:14px;padding:14px 16px}
+  .stat.teal{background:var(--teal-soft)}
+  .stat.amber{background:#fffbeb}
+  .stat.rose{background:#fff1f2}
+  .stat .k{font-size:.72rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+  .stat .v{font-size:1.25rem;font-weight:800;margin-top:4px;color:var(--accent);word-break:break-word}
+  .stat.teal .v{color:var(--teal)} .stat.amber .v{color:var(--amber)} .stat.rose .v{color:var(--rose)}
+  .chart-wrap{position:relative;height:280px}
+  .note{font-size:.75rem;color:var(--muted);margin-top:12px;line-height:1.5}
+  .badge{display:inline-block;font-size:.68rem;font-weight:700;padding:3px 8px;border-radius:99px;background:var(--teal-soft);color:var(--teal);margin-left:8px}
+  .cat-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px dashed var(--border);font-size:.85rem;font-weight:600}
+  .cat-row:last-child{border-bottom:none}
+  .cat-row input{width:120px;padding:6px 10px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:.85rem;font-weight:600;text-align:right;background:#f8fafc;color:var(--ink)}
+  .cat-row input:focus{outline:none;border-color:var(--accent);background:#fff}
+  footer{max-width:1100px;margin:0 auto;padding:0 24px 32px;font-size:.75rem;color:var(--muted);text-align:center}
+  @media(max-width:860px){
+    .grid{grid-template-columns:1fr}
+    header{padding:18px 20px} nav,main,footer{padding-left:16px;padding-right:16px}
+    .chart-wrap{height:230px}
+    .stat .v{font-size:1.1rem}
+    .fx-pill{margin-left:0}
+  }
+
+  /* ---------- AI Wealth Advisor ---------- */
+  .advisor-toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px}
+  .advisor-language{display:flex;align-items:center;gap:8px;background:#f8fafc;border:1.5px solid var(--border);padding:7px 10px;border-radius:12px}
+  .advisor-language label{font-size:.78rem;font-weight:800;color:var(--muted)}
+  .advisor-language select{border:0;background:transparent;font:inherit;font-weight:800;color:var(--ink);outline:none}
+  .voice-btn,.manual-btn{border:1.5px solid var(--border);background:#fff;color:var(--ink);padding:9px 13px;border-radius:12px;font:inherit;font-weight:800;cursor:pointer}
+  .voice-btn{background:var(--accent);border-color:var(--accent);color:#fff}
+  .voice-btn.listening{background:#dc2626;border-color:#dc2626;animation:advisorPulse 1.2s infinite}
+  .manual-btn:hover,.voice-btn:hover{filter:brightness(.98)}
+  .voice-status{font-size:.76rem;color:var(--muted);margin:0 0 12px}
+  .advisor-grid{display:grid;grid-template-columns:1.25fr .75fr;gap:18px}
+  .advisor-chat{min-height:420px;max-height:620px;overflow:auto;padding:16px;background:#f8fafc;border:1px solid var(--border);border-radius:16px}
+  .advisor-msg{max-width:88%;padding:12px 14px;border-radius:14px;margin:0 0 12px;line-height:1.55;font-size:.88rem;white-space:pre-wrap}
+  .advisor-msg.ai{background:#fff;border:1px solid var(--border);margin-right:auto}
+  .advisor-msg.user{background:var(--accent);color:#fff;margin-left:auto}
+  .advisor-composer{display:flex;gap:8px;margin-top:12px}
+  .advisor-composer textarea{flex:1;min-height:52px;resize:vertical;padding:12px;border:1.5px solid var(--border);border-radius:12px;font:inherit}
+  .advisor-send{border:0;border-radius:12px;background:var(--accent);color:#fff;font-weight:800;padding:0 18px;cursor:pointer}
+  .advisor-card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:16px}
+  .advisor-card h3{margin:0 0 8px;font-size:1rem}
+  .advisor-card p,.advisor-card li{font-size:.82rem;line-height:1.55;color:var(--muted)}
+  .advisor-prompts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+  .advisor-prompt{border:1px solid var(--border);background:#fff;border-radius:11px;padding:9px;text-align:left;font:inherit;font-size:.78rem;font-weight:700;cursor:pointer}
+  .advisor-prompt:hover{border-color:var(--accent)}
+  @keyframes advisorPulse{50%{box-shadow:0 0 0 7px rgba(220,38,38,.12)}}
+  @media(max-width:860px){.advisor-grid{grid-template-columns:1fr}.advisor-chat{min-height:320px}.advisor-prompts{grid-template-columns:1fr}}
+
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <button class="logo" id="logo-trigger" type="button" aria-label="Expand Wealth Engine logo" aria-haspopup="dialog" aria-controls="logo-modal">
+      <img src="https://huggingface.co/datasets/project-python/wealth-engine-assets/resolve/main/logo.png" alt="" width="52" height="52">
+    </button>
+    <div>
+      <h1>Wealth Engine</h1>
+      <p>Plan, project and protect your money — eight tools in one place</p>
+    </div>
+    <span class="fx-pill" id="fx-pill">FX: loading…</span>
+  </div>
+</header>
+
+<dialog class="logo-modal" id="logo-modal" aria-label="Wealth Engine logo preview">
+  <div class="logo-modal-content">
+    <img src="https://huggingface.co/datasets/project-python/wealth-engine-assets/resolve/main/logo.png" alt="Wealth Engine logo, expanded">
+  </div>
+</dialog>
+
+<nav id="tabs">
+  <button class="active" data-target="sip"><span class="ic">💰</span>SIP</button>
+  <button data-target="emi"><span class="ic">🏦</span>EMI</button>
+  <button data-target="inflation"><span class="ic">📉</span>Inflation</button>
+  <button data-target="education"><span class="ic">🎓</span>Education</button>
+  <button data-target="swp"><span class="ic">🏧</span>SWP</button>
+  <button data-target="ci"><span class="ic">📊</span>Compound Interest</button>
+  <button data-target="debt"><span class="ic">💳</span>Debt Payoff</button>
+  <button data-target="budget"><span class="ic">🧾</span>Budget</button>
+  <button data-target="advisor"><span class="ic">🤖</span>AI Wealth Advisor</button>
+</nav>
+
+<main>
+
+  <!-- ============ SIP ============ -->
+  <section id="sip" class="module active">
+    <div class="module-head">
+      <h2>Systematic Investment Plan <span class="badge">with annual step-up</span></h2>
+      <p>See how a monthly investment compounds over time.</p>
+    </div>
+    <div class="grid">
+      <div class="card inputs">
+        <h3 class="input-cta">Enter your details</h3>
+        <div class="field"><label>Monthly investment <span class="cur-sym">₹</span></label>
+          <div class="field-row"><input type="range" id="sip-amt" min="0" max="200000" step="500" value="0"><input type="number" id="sip-amt-n" min="0" value="0"></div></div>
+        <div class="field"><label>Expected return (p.a.) <span>%</span></label>
+          <div class="field-row"><input type="range" id="sip-rate" min="0" max="30" step="0.5" value="0"><input type="number" id="sip-rate-n" min="0" max="30" step="0.5" value="0"></div></div>
+        <div class="field"><label>Investment period <span>years</span></label>
+          <div class="field-row"><input type="range" id="sip-yrs" min="0" max="40" value="0"><input type="number" id="sip-yrs-n" min="0" max="40" value="0"></div></div>
+        <div class="field"><label>Annual step-up <span>%</span></label>
+          <div class="field-row"><input type="range" id="sip-step" min="0" max="25" value="0"><input type="number" id="sip-step-n" min="0" max="25" value="0"></div></div>
+      </div>
+      <div>
+        <div class="results">
+          <div class="stat"><div class="k">Invested amount</div><div class="v" id="sip-inv">—</div></div>
+          <div class="stat teal"><div class="k">Estimated returns</div><div class="v" id="sip-ret">—</div></div>
+          <div class="stat"><div class="k">Total value</div><div class="v" id="sip-tot">—</div></div>
+        </div>
+        <div class="card"><h3>Growth over time</h3><div class="chart-wrap"><canvas id="sip-chart"></canvas></div>
+        <p class="note">Returns are compounded monthly. Actual market returns vary year to year.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ EMI ============ -->
+  <section id="emi" class="module">
+    <div class="module-head">
+      <h2>Loan EMI Estimator</h2>
+      <p>Monthly instalment, total interest and repayment split for any loan.</p>
+    </div>
+    <div class="grid">
+      <div class="card inputs">
+        <h3 class="input-cta">Enter your details</h3>
+        <div class="field"><label>Loan amount <span class="cur-sym">₹</span></label>
+          <div class="field-row"><input type="range" id="emi-amt" min="0" max="20000000" step="50000" value="0"><input type="number" id="emi-amt-n" min="0" step="50000" value="0"></div></div>
+        <div class="field"><label>Interest rate (p.a.) <span>%</span></label>
+          <div class="field-row"><input type="range" id="emi-rate" min="0" max="24" step="0.1" value="0"><input type="number" id="emi-rate-n" min="0" max="24" step="0.1" value="0"></div></div>
+        <div class="field"><label>Tenure <span>years</span></label>
+          <div class="field-row"><input type="range" id="emi-yrs" min="0" max="30" value="0"><input type="number" id="emi-yrs-n" min="0" max="30" value="0"></div></div>
+      </div>
+      <div>
+        <div class="results">
+          <div class="stat"><div class="k">Monthly EMI</div><div class="v" id="emi-val">—</div></div>
+          <div class="stat rose"><div class="k">Total interest</div><div class="v" id="emi-int">—</div></div>
+          <div class="stat amber"><div class="k">Total payment</div><div class="v" id="emi-tot">—</div></div>
+        </div>
+        <div class="card"><h3>Principal vs interest</h3><div class="chart-wrap"><canvas id="emi-chart"></canvas></div>
+        <p class="note">EMI = P·r·(1+r)ⁿ / ((1+r)ⁿ − 1), with r the monthly rate and n the number of months.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ INFLATION ============ -->
+  <section id="inflation" class="module">
+    <div class="module-head">
+      <h2>Inflation Adjustment Analysis</h2>
+      <p>What today's money will cost tomorrow — and what it will still be worth.</p>
+    </div>
+    <div class="grid">
+      <div class="card inputs">
+        <h3 class="input-cta">Enter your details</h3>
+        <div class="field"><label>Amount today <span class="cur-sym">₹</span></label>
+          <div class="field-row"><input type="range" id="inf-amt" min="0" max="10000000" step="10000" value="0"><input type="number" id="inf-amt-n" min="0" step="10000" value="0"></div></div>
+        <div class="field"><label>Inflation rate (p.a.) <span>%</span></label>
+          <div class="field-row"><input type="range" id="inf-rate" min="0" max="15" step="0.25" value="0"><input type="number" id="inf-rate-n" min="0" max="15" step="0.25" value="0"></div></div>
+        <div class="field"><label>Time horizon <span>years</span></label>
+          <div class="field-row"><input type="range" id="inf-yrs" min="0" max="40" value="0"><input type="number" id="inf-yrs-n" min="0" max="40" value="0"></div></div>
+      </div>
+      <div>
+        <div class="results">
+          <div class="stat rose"><div class="k">Future cost of today's money</div><div class="v" id="inf-fut">—</div></div>
+          <div class="stat teal"><div class="k">Purchasing power then</div><div class="v" id="inf-pp">—</div></div>
+          <div class="stat amber"><div class="k">Value eroded</div><div class="v" id="inf-eros">—</div></div>
+        </div>
+        <div class="card"><h3>Cost rise vs purchasing power</h3><div class="chart-wrap"><canvas id="inf-chart"></canvas></div>
+        <p class="note">Future cost = A·(1+f)ᵗ. Purchasing power = A ÷ (1+f)ᵗ — what the same money buys after t years.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ EDUCATION ============ -->
+  <section id="education" class="module">
+    <div class="module-head">
+      <h2>Education Planning Projection</h2>
+      <p>Project the future cost of education and the monthly SIP that funds it.</p>
+    </div>
+    <div class="grid">
+      <div class="card inputs">
+        <h3 class="input-cta">Enter your details</h3>
+        <div class="field"><label>Child's current age <span>years</span></label>
+          <div class="field-row"><input type="range" id="edu-age" min="0" max="17" value="0"><input type="number" id="edu-age-n" min="0" max="17" value="0"></div></div>
+        <div class="field"><label>Education starts at age <span>years</span></label>
+          <div class="field-row"><input type="range" id="edu-target" min="0" max="30" value="0"><input type="number" id="edu-target-n" min="0" max="30" value="0"></div></div>
+        <div class="field"><label>Current course cost <span class="cur-sym">₹</span></label>
+          <div class="field-row"><input type="range" id="edu-cost" min="0" max="20000000" step="100000" value="0"><input type="number" id="edu-cost-n" min="0" step="100000" value="0"></div></div>
+        <div class="field"><label>Education inflation <span>% p.a.</span></label>
+          <div class="field-row"><input type="range" id="edu-infl" min="0" max="15" step="0.5" value="0"><input type="number" id="edu-infl-n" min="0" max="15" step="0.5" value="0"></div></div>
+        <div class="field"><label>Expected return on savings <span>% p.a.</span></label>
+          <div class="field-row"><input type="range" id="edu-ret" min="0" max="20" step="0.5" value="0"><input type="number" id="edu-ret-n" min="0" max="20" step="0.5" value="0"></div></div>
+        <div class="field"><label>Existing savings <span class="cur-sym">₹</span></label>
+          <div class="field-row"><input type="range" id="edu-sav" min="0" max="5000000" step="50000" value="0"><input type="number" id="edu-sav-n" min="0" step="50000" value="0"></div></div>
+      </div>
+      <div>
+        <div class="results">
+          <div class="stat rose"><div class="k">Projected cost then</div><div class="v" id="edu-fut">—</div></div>
+          <div class="stat teal"><div class="k">Required monthly SIP</div><div class="v" id="edu-sip">—</div></div>
+          <div class="stat"><div class="k">Savings years left</div><div class="v" id="edu-yrs">—</div></div>
+        </div>
+        <div class="card"><h3>Cost vs your corpus</h3><div class="chart-wrap"><canvas id="edu-chart"></canvas></div>
+        <p class="note">The corpus line assumes the required SIP starts this month and existing savings grow at the expected return.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SWP ============ -->
+  <section id="swp" class="module">
+    <div class="module-head">
+      <h2>Systematic Withdrawal Plan</h2>
+      <p>Model a monthly withdrawal from a corpus and see how long it lasts.</p>
+    </div>
+    <div class="grid">
+      <div class="card inputs">
+        <h3 class="input-cta">Enter your details</h3>
+        <div class="field"><label>Total corpus <span class="cur-sym">₹</span></label>
+          <div class="field-row"><input type="range" id="swp-cor" min="0" max="100000000" step="100000" value="0"><input type="number" id="swp-cor-n" min="0" step="100000" value="0"></div></div>
+        <div class="field"><label>Monthly withdrawal <span class="cur-sym">₹</span></label>
+          <div class="field-row"><input type="range" id="swp-wd" min="0" max="500000" step="1000" value="0"><input type="number" id="swp-wd-n" min="0" step="1000" value="0"></div></div>
+        <div class="field"><label>Expected return (p.a.) <span>%</span></label>
+          <div class="field-row"><input type="range" id="swp-rate" min="0" max="20" step="0.5" value="0"><input type="number" id="swp-rate-n" min="0" max="20" step="0.5" value="0"></div></div>
+        <div class="field"><label>Withdrawal period <span>years</span></label>
+          <div class="field-row"><input type="range" id="swp-yrs" min="0" max="40" value="0"><input type="number" id="swp-yrs-n" min="0" max="40" value="0"></div></div>
+      </div>
+      <div>
+        <div class="results">
+          <div class="stat"><div class="k">Total withdrawn</div><div class="v" id="swp-wtd">—</div></div>
+          <div class="stat teal"><div class="k">Remaining corpus</div><div class="v" id="swp-rem">—</div></div>
+          <div class="stat" id="swp-dur-box"><div class="k">Corpus lasts</div><div class="v" id="swp-dur">—</div></div>
+        </div>
+        <div class="card"><h3>Corpus balance over time</h3><div class="chart-wrap"><canvas id="swp-chart"></canvas></div>
+        <p class="note">Each month the corpus grows at the expected return, then the withdrawal is deducted. The final payment is limited to the balance available.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CI ============ -->
+  <section id="ci" class="module">
+    <div class="module-head">
+      <h2>Compound Interest</h2>
+      <p>Growth of a lump sum with your choice of compounding frequency.</p>
+    </div>
+    <div class="grid">
+      <div class="card inputs">
+        <h3 class="input-cta">Enter your details</h3>
+        <div class="field"><label>Principal <span class="cur-sym">₹</span></label>
+          <div class="field-row"><input type="range" id="ci-p" min="0" max="50000000" step="10000" value="0"><input type="number" id="ci-p-n" min="0" step="10000" value="0"></div></div>
+        <div class="field"><label>Interest rate (p.a.) <span>%</span></label>
+          <div class="field-row"><input type="range" id="ci-r" min="0" max="25" step="0.25" value="0"><input type="number" id="ci-r-n" min="0" max="25" step="0.25" value="0"></div></div>
+        <div class="field"><label>Time <span>years</span></label>
+          <div class="field-row"><input type="range" id="ci-t" min="0" max="40" value="0"><input type="number" id="ci-t-n" min="0" max="40" value="0"></div></div>
+        <div class="field"><label>Compounding frequency</label>
+          <select id="ci-f">
+            <option value="1">Annually</option>
+            <option value="2">Half-yearly</option>
+            <option value="4" selected>Quarterly</option>
+            <option value="12">Monthly</option>
+          </select></div>
+      </div>
+      <div>
+        <div class="results">
+          <div class="stat"><div class="k">Principal</div><div class="v" id="ci-pv">—</div></div>
+          <div class="stat teal"><div class="k">Interest earned</div><div class="v" id="ci-int">—</div></div>
+          <div class="stat amber"><div class="k">Maturity value</div><div class="v" id="ci-tot">—</div></div>
+        </div>
+        <div class="card"><h3>Wealth curve</h3><div class="chart-wrap"><canvas id="ci-chart"></canvas></div>
+        <p class="note">A = P·(1 + r/f)^(f·t), with f compounds per year. Higher frequency → slightly higher maturity value.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ DEBT PAYOFF ============ -->
+  <section id="debt" class="module">
+    <div class="module-head">
+      <h2>Debt Payoff Planner</h2>
+      <p>How long until your debt is cleared — and what it costs you along the way.</p>
+    </div>
+    <div class="grid">
+      <div class="card inputs">
+        <h3 class="input-cta">Enter your details</h3>
+        <div class="field"><label>Total debt <span class="cur-sym">₹</span></label>
+          <div class="field-row"><input type="range" id="dbt-amt" min="0" max="20000000" step="10000" value="0"><input type="number" id="dbt-amt-n" min="0" step="10000" value="0"></div></div>
+        <div class="field"><label>Interest rate (p.a.) <span>%</span></label>
+          <div class="field-row"><input type="range" id="dbt-rate" min="0" max="36" step="0.25" value="0"><input type="number" id="dbt-rate-n" min="0" max="36" step="0.25" value="0"></div></div>
+        <div class="field"><label>Monthly payment <span class="cur-sym">₹</span></label>
+          <div class="field-row"><input type="range" id="dbt-pay" min="0" max="200000" step="500" value="0"><input type="number" id="dbt-pay-n" min="0" step="500" value="0"></div></div>
+        <p class="note" id="dbt-warn" style="display:none;color:var(--rose);font-weight:600;line-height:1.5"></p>
+      </div>
+      <div>
+        <div class="results">
+          <div class="stat teal"><div class="k" id="dbt-time-k">Time to payoff</div><div class="v" id="dbt-time">—</div></div>
+          <div class="stat rose"><div class="k" id="dbt-int-k">Total interest paid</div><div class="v" id="dbt-int">—</div></div>
+          <div class="stat amber"><div class="k" id="dbt-date-k">Debt-free on</div><div class="v" id="dbt-date">—</div></div>
+        </div>
+        <div class="card"><h3>Amortization — balance vs interest</h3><div class="chart-wrap"><canvas id="dbt-chart"></canvas></div>
+        <p class="note">Each month interest accrues on the outstanding balance first; the rest of your payment reduces the principal.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ BUDGET ============ -->
+  <section id="budget" class="module">
+    <div class="module-head">
+      <h2>Personal Budget Planner</h2>
+      <p>Categorize your monthly expenses and see your savings rate at a glance.</p>
+    </div>
+    <div class="grid">
+      <div class="card inputs">
+        <h3 class="input-cta">Enter your details</h3>
+        <div class="field"><label>Monthly income <span class="cur-sym">₹</span></label>
+          <div class="field-row"><input type="range" id="bud-inc" min="0" max="1000000" step="5000" value="0"><input type="number" id="bud-inc-n" min="0" step="5000" value="0"></div></div>
+        <h3 style="margin-top:18px">Monthly expenses</h3>
+        <div class="cat-list">
+          <div class="cat-row"><span>🏠 Housing / Rent</span><input type="number" id="bud-hous" min="0" step="500" value="0"></div>
+          <div class="cat-row"><span>🍽️ Food &amp; Groceries</span><input type="number" id="bud-food" min="0" step="500" value="0"></div>
+          <div class="cat-row"><span>🚗 Transport</span><input type="number" id="bud-trns" min="0" step="500" value="0"></div>
+          <div class="cat-row"><span>💡 Utilities &amp; Bills</span><input type="number" id="bud-util" min="0" step="500" value="0"></div>
+          <div class="cat-row"><span>🛡️ Insurance &amp; Health</span><input type="number" id="bud-ins" min="0" step="500" value="0"></div>
+          <div class="cat-row"><span>🎓 Education</span><input type="number" id="bud-edu" min="0" step="500" value="0"></div>
+          <div class="cat-row"><span>🎬 Entertainment</span><input type="number" id="bud-fun" min="0" step="500" value="0"></div>
+          <div class="cat-row"><span>📦 Other</span><input type="number" id="bud-othr" min="0" step="500" value="0"></div>
+        </div>
+      </div>
+      <div>
+        <div class="results">
+          <div class="stat"><div class="k">Total expenses</div><div class="v" id="bud-exp">—</div></div>
+          <div class="stat teal" id="bud-sav-box"><div class="k">Monthly savings</div><div class="v" id="bud-sav">—</div></div>
+          <div class="stat teal" id="bud-rate-box"><div class="k">Savings rate</div><div class="v" id="bud-rate">—</div></div>
+        </div>
+        <div class="card"><h3>Where the money goes</h3><div class="chart-wrap"><canvas id="bud-chart"></canvas></div>
+        <p class="note">The doughnut includes your savings as a slice — aim for at least 20% of income.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+  /* ---------- Debt Payoff ---------- */
+  function updateDebt(){
+    const D=toINR(+$('dbt-amt').value), R=+$('dbt-rate').value, P=toINR(+$('dbt-pay').value);
+    const r=R/1200;
+    const minPay = D*r;
+    const warn = $('dbt-warn');
+    if(D <= 0){
+      $('dbt-pay-n').style.borderColor = '';
+      warn.style.display = 'none';
+      $('dbt-time-k').textContent = 'Time to payoff';
+      $('dbt-time').textContent = '0 mo';
+      $('dbt-int-k').textContent = 'Total interest paid';
+      $('dbt-int').textContent = fmt(0);
+      $('dbt-date-k').textContent = 'Debt-free on';
+      $('dbt-date').textContent = 'Now';
+      drawLine('dbt-chart',['Y0'],[
+        { label:'Outstanding balance', data:[0], borderColor:CHART_COLORS.rose, backgroundColor:CHART_COLORS.roseFill, fill:true, tension:.3, pointRadius:0, borderWidth:2.5 },
+        { label:'Cumulative interest', data:[0], borderColor:CHART_COLORS.amber, backgroundColor:'transparent', borderDash:[5,4], tension:.3, pointRadius:0, borderWidth:2 }
+      ]);
+      return;
+    }
+    const invalid = P <= 0 || (D > 0 && P <= minPay);
+    $('dbt-pay-n').style.borderColor = invalid ? 'var(--rose)' : '';
+    warn.style.display = invalid ? 'block' : 'none';
+    if(invalid){
+      warn.innerHTML = P <= 0
+        ? '⚠ Enter a monthly payment above zero to project your payoff plan.'
+        : '⚠ Your monthly payment of ' + fmt(P) + ' doesn’t cover the monthly interest of <b>' + fmt(minPay) + '</b>. Increase the amount to at least ' + fmt(minPay) + ' — anything below only feeds the interest and the debt grows.';
+    }
+    const HZ = 10;
+    if(invalid){
+      $('dbt-time-k').textContent = 'Status';
+      $('dbt-time').textContent = 'Debt rising ⚠';
+      $('dbt-int-k').textContent = 'Interest over ' + HZ + ' yrs';
+      $('dbt-date-k').textContent = 'Debt after ' + HZ + ' yrs';
+      let bal=D, cumInt=0; const pts=[{y:0,bal:D,int:0}];
+      for(let m=1;m<=HZ*12;m++){
+        const int=bal*r; cumInt+=int; bal=bal+int-P;
+        if(m%12===0) pts.push({y:m/12,bal,int:cumInt});
+      }
+      $('dbt-int').textContent = fmt(cumInt);
+      $('dbt-date').textContent = fmt(bal);
+      drawLine('dbt-chart', pts.map(p=>'Y'+p.y), [
+        { label:'Outstanding balance', data:pts.map(p=>p.bal), borderColor:CHART_COLORS.rose, backgroundColor:CHART_COLORS.roseFill, fill:true, tension:.3, pointRadius:0, borderWidth:2.5 },
+        { label:'Cumulative interest', data:pts.map(p=>p.int), borderColor:CHART_COLORS.amber, backgroundColor:'transparent', borderDash:[5,4], tension:.3, pointRadius:0, borderWidth:2 }
+      ]);
+      return;
+    }
+    $('dbt-time-k').textContent = 'Time to payoff';
+    $('dbt-int-k').textContent = 'Total interest paid';
+    $('dbt-date-k').textContent = 'Debt-free on';
+    let bal=D, cumInt=0, months=0; const pts=[{y:0,bal:D,int:0}];
+    for(let m=1;m<=1200;m++){
+      const int=bal*r; cumInt+=int; bal=bal+int-P;
+      if(bal<=0){ bal=0; months=m; pts.push({y:m/12,bal:0,int:cumInt}); break; }
+      if(m%12===0) pts.push({y:m/12,bal,int:cumInt});
+    }
+    $('dbt-time').textContent = months < 24 ? months + ' mo' : (months/12).toFixed(2) + ' yrs';
+    $('dbt-int').textContent = fmt(cumInt);
+    const d=new Date(); d.setMonth(d.getMonth()+months);
+    $('dbt-date').textContent = d.toLocaleDateString('en-IN',{month:'short',year:'numeric'});
+    drawLine('dbt-chart', pts.map(p => 'Y'+p.y.toFixed(2)), [
+      { label:'Outstanding balance', data:pts.map(p=>p.bal), borderColor:CHART_COLORS.rose, backgroundColor:CHART_COLORS.roseFill, fill:true, tension:.3, pointRadius:0, borderWidth:2.5 },
+      { label:'Cumulative interest', data:pts.map(p=>p.int), borderColor:CHART_COLORS.amber, backgroundColor:'transparent', borderDash:[5,4], tension:.3, pointRadius:0, borderWidth:2 }
+    ]);
+  }
+
+  /* ---------- Personal Budget ---------- */
+  const BUD_CATS=[['bud-hous','Housing / Rent'],['bud-food','Food & Groceries'],['bud-trns','Transport'],['bud-util','Utilities & Bills'],['bud-ins','Insurance & Health'],['bud-edu','Education'],['bud-fun','Entertainment'],['bud-othr','Other']];
+  const BUD_COLORS=['#4f46e5','#0d9488','#d97706','#e11d48','#7c3aed','#0891b2','#65a30d','#db2777'];
+  function updateBudget(){
+    const inc=toINR(Math.max(0,+$('bud-inc').value||0));
+    let exp=0; const vals=[];
+    BUD_CATS.forEach(c=>{ const v=toINR(Math.max(0,+$(''+c[0]).value||0)); vals.push(v); exp+=v; });
+    const sav=inc-exp, rate=inc>0 ? sav/inc*100 : 0;
+    $('bud-exp').textContent=fmt(exp);
+    $('bud-sav').textContent=fmt(sav);
+    $('bud-rate').textContent=rate.toFixed(2)+'%';
+    const cls = sav<0 ? 'rose' : rate>=20 ? 'teal' : rate>=10 ? 'amber' : 'rose';
+    ['bud-sav-box','bud-rate-box'].forEach(id=>{ const b=$(id); b.classList.remove('teal','amber','rose'); b.classList.add(cls); });
+    drawDonut('bud-chart', BUD_CATS.map(c=>c[1]).concat(['Savings']), vals.concat([Math.max(0,sav)]), BUD_COLORS.concat(['#22c55e']));
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    bindPair('dbt-amt','dbt-amt-n',updateDebt);
+    bindPair('dbt-rate','dbt-rate-n',updateDebt);
+    bindPair('dbt-pay','dbt-pay-n',updateDebt);
+    bindPair('bud-inc','bud-inc-n',updateBudget);
+    BUD_CATS.forEach(c=>$(c[0]).addEventListener('input',updateBudget));
+  });
+  </script>
+
+
+<section id="advisor" class="module">
+  <div class="module-head">
+    <div>
+      <h2>AI Wealth Advisor <span class="badge">REAL AI</span></h2>
+      <p>Ask in English, हिंदी or मराठी. Speak naturally or type your question.</p>
+    </div>
+  </div>
+
+  <div class="advisor-toolbar">
+    <div class="advisor-language">
+      <label for="advisor-lang">Language</label>
+      <select id="advisor-lang" aria-label="Choose AI language">
+        <option value="en-IN">English</option>
+        <option value="hi-IN">हिंदी</option>
+        <option value="mr-IN">मराठी</option>
+      </select>
+    </div>
+    <button class="voice-btn" id="advisor-voice" type="button">🎙️ Voice Talk</button>
+    <button class="manual-btn" id="advisor-manual" type="button">⚙️ Manual</button>
+  </div>
+  <p class="voice-status" id="advisor-voice-status">Choose a language above, then tap Voice Talk and speak. You can switch to Manual anytime.</p>
+
+  <div class="advisor-grid">
+    <div>
+      <div class="advisor-chat" id="advisor-chat" aria-live="polite">
+        <div class="advisor-msg ai">नमस्ते! I’m your AI Wealth Advisor. Tell me your amount, goal, time horizon and risk preference — or just speak naturally. I’ll ask follow-up questions when important.</div>
+      </div>
+      <div class="advisor-composer">
+        <textarea id="advisor-input" placeholder="Example: I have ₹10 lakh. I want to invest for 5 years. What should I do?"></textarea>
+        <button class="advisor-send" id="advisor-send" type="button">Send</button>
+      </div>
+    </div>
+
+    <aside class="advisor-card">
+      <h3>Quick questions</h3>
+      <p>Tap one, then let the AI continue the conversation.</p>
+      <div class="advisor-card" style="margin-top:14px;padding:12px;background:var(--accent-soft)"><strong style="font-size:.82rem">🔒 Secure AI connection</strong><p style="margin-top:4px">AI credentials are not displayed in this page. The request uses the secure server endpoint.</p></div>
+      <div class="advisor-prompts">
+        <button class="advisor-prompt" type="button" data-prompt="I have ₹10 lakh to invest. Analyse my options and ask me the important questions first.">₹10 lakh plan</button>
+        <button class="advisor-prompt" type="button" data-prompt="I can invest ₹50,000 every month. Build a goal-based investment plan for me.">₹50k monthly</button>
+        <button class="advisor-prompt" type="button" data-prompt="Should I repay my loan first or invest my spare money? Compare both options.">Loan vs invest</button>
+        <button class="advisor-prompt" type="button" data-prompt="Create a 10-year wealth-building strategy with realistic assumptions and risks.">10-year plan</button>
+      </div>
+    </aside>
+  </div>
+</section>
+
+</main>
+
+<footer>Estimates for planning purposes only — not investment advice. Actual returns, taxes, costs and exchange rates will vary.</footer>
+
+<script>
+const $ = id => document.getElementById(id);
+
+/* ---------- currency engine ---------- */
+const CURRENCIES = [
+  ['INR','Indian Rupee','₹','en-IN'], ['USD','US Dollar','$','en-US'], ['EUR','Euro','€','en-IE'],
+  ['GBP','British Pound','£','en-GB'], ['JPY','Japanese Yen','¥','ja-JP'], ['AUD','Australian Dollar','A$','en-AU'],
+  ['CAD','Canadian Dollar','C$','en-CA'], ['SGD','Singapore Dollar','S$','en-SG'],
+  ['AED','UAE Dirham','AED','en-AE'], ['CHF','Swiss Franc','CHF','de-CH']
+];
+const SYMBOL = {}; const LOCALE = {};
+CURRENCIES.forEach(c => { SYMBOL[c[0]] = c[2]; LOCALE[c[0]] = c[3]; });
+let cur = 'INR', fxStatus = 'offline';
+const FX = { INR:1, USD:0.0113, EUR:0.00965, GBP:0.00835, JPY:1.71, AUD:0.0172, CAD:0.0156, SGD:0.0147, AED:0.0415, CHF:0.009 }; // units per 1 INR (built-in fallback)
+const MONEY_FIELDS = ['sip-amt','emi-amt','inf-amt','edu-cost','edu-sav','swp-cor','swp-wd','ci-p','dbt-amt','dbt-pay','bud-inc'];
+const CAT_FIELDS = ['bud-hous','bud-food','bud-trns','bud-util','bud-ins','bud-edu','bud-fun','bud-othr'];
+// Monetary controls share a consistent selected-currency range across tools.
+const MONEY_MIN = 1;
+const MONEY_MAX = 1_000_000;
+
+const toSel = n => n * FX[cur];
+const toINR = a => a / FX[cur];
+function fmtSel(v){
+  const value = Number.isFinite(v) ? v : 0;
+  return new Intl.NumberFormat(LOCALE[cur],{style:'currency',currency:cur,minimumFractionDigits:2,maximumFractionDigits:2}).format(value);
+}
+function fmtAxis(v){
+  const value = Number.isFinite(v) ? v : 0;
+  return new Intl.NumberFormat(LOCALE[cur],{style:'currency',currency:cur,notation:'compact',minimumFractionDigits:2,maximumFractionDigits:2}).format(value);
+}
+function fmt(n){ return fmtSel(toSel(n)); }
+function inputValue(id){
+  const value = Number($(id).value);
+  return Number.isFinite(value) ? value : 0;
+}
+function needsTwoDecimals(input){
+  const id = input.id;
+  const moneyId = id.endsWith('-n') ? id.slice(0,-2) : id;
+  return MONEY_FIELDS.includes(moneyId) || CAT_FIELDS.includes(id) ||
+    input.step === 'any' || input.step.includes('.');
+}
+function displayInputValue(input, value){
+  const number = Number(value);
+  return Number.isFinite(number) && needsTwoDecimals(input) ? number.toFixed(2) : String(value);
+}
+function formatDecimalInputs(){
+  document.querySelectorAll('.inputs input[type="number"]').forEach(input => {
+    if(input.value !== '' && needsTwoDecimals(input)){
+      input.value = displayInputValue(input, input.value);
+    }
+  });
+}
+
+/* ---------- slider/number pairing ---------- */
+function bindPair(r, n, cb){
+  const range = $(r), number = $(n);
+  const syncNumber = () => {
+    number.min = range.min || '0';
+    number.max = range.max;
+    number.step = range.step === 'any' ? 'any' : range.step;
+  };
+  syncNumber();
+  range.addEventListener('input', () => { number.value = displayInputValue(number, range.value); cb(); });
+  number.addEventListener('input', () => {
+    const value = Number(number.value);
+    const min = Number(number.min || 0);
+    const max = Number(number.max);
+    if(Number.isFinite(value)){
+      const bounded = Math.min(Number.isFinite(max) ? max : value, Math.max(min, value));
+      if(bounded !== value) number.value = String(bounded);
+      range.value = String(bounded);
+    }else{
+      range.value = range.min || '0';
+    }
+    cb();
+  });
+  number.addEventListener('blur', () => {
+    if(number.value !== '') number.value = displayInputValue(number, number.value);
+  });
+}
+
+/* ---------- charts ---------- */
+const charts = {};
+const CHART_COLORS = { accent:'rgba(79,70,229,1)', accentFill:'rgba(79,70,229,.12)', teal:'rgba(13,148,136,1)', tealFill:'rgba(13,148,136,.12)', rose:'rgba(225,29,72,1)', roseFill:'rgba(225,29,72,.12)', amber:'rgba(217,119,6,1)', amberFill:'rgba(217,119,6,.12)' };
+
+function drawLine(id, labels, datasets){
+  if(!window.Chart) return;
+  const ds = datasets.map(d => Object.assign({}, d, { data: d.data.map(toSel) }));
+  if(charts[id]){ charts[id].data.labels = labels; charts[id].data.datasets = ds; charts[id].update(); return; }
+  charts[id] = new Chart($(id), {
+    type:'line',
+    data:{ labels, datasets: ds },
+    options:{
+      responsive:true, maintainAspectRatio:false, animation:{ duration:120 }, interaction:{ mode:'index', intersect:false },
+      plugins:{ legend:{ labels:{ usePointStyle:true, pointStyle:'circle', boxWidth:8, font:{ family:'Inter', size:11 } } },
+        tooltip:{ callbacks:{ label: c => c.dataset.label + ': ' + fmtSel(c.parsed.y) } } },
+      scales:{ x:{ grid:{ display:false }, ticks:{ font:{ family:'Inter', size:11 } } },
+        y:{ grid:{ color:'rgba(15,23,42,.05)' }, ticks:{ font:{ family:'Inter', size:11 }, callback: v => fmtAxis(v) } } }
+    }
+  });
+}
+function drawDonut(id, labels, data, colors){
+  if(!window.Chart) return;
+  const vals = data.map(toSel);
+  if(charts[id]){ charts[id].data.datasets[0].data = vals; charts[id].update(); return; }
+  charts[id] = new Chart($(id), {
+    type:'doughnut',
+    data:{ labels, datasets:[{ data: vals, backgroundColor:colors, borderWidth:3, borderColor:'#fff' }] },
+    options:{ responsive:true, maintainAspectRatio:false, animation:{ duration:120 }, cutout:'62%',
+      plugins:{ legend:{ position:'bottom', labels:{ usePointStyle:true, pointStyle:'circle', boxWidth:8, font:{ family:'Inter', size:11 } } },
+        tooltip:{ callbacks:{ label: c => c.label + ': ' + fmtSel(c.parsed) } } } }
+  });
+}
+
+/* ---------- SIP ---------- */
+function sipCalc(monthly, rate, years, stepPct){
+  const i = rate/100/12;
+  let bal=0, invested=0; const pts=[{ year:0, bal:0, invested:0 }];
+  for(let y=0; y<years; y++){
+    const m = monthly * Math.pow(1 + stepPct/100, y);
+    for(let k=0;k<12;k++){ bal = (bal + m) * (1+i); invested += m; }
+    pts.push({ year:y+1, bal, invested });
+  }
+  return { bal, invested, pts };
+}
+function updateSIP(){
+  const m=toINR(+$('sip-amt').value), r=+$('sip-rate').value, y=+$('sip-yrs').value, s=+$('sip-step').value;
+  const { bal, invested, pts } = sipCalc(m, r, y, s);
+  $('sip-inv').textContent = fmt(invested);
+  $('sip-ret').textContent = fmt(bal - invested);
+  $('sip-tot').textContent = fmt(bal);
+  drawLine('sip-chart', pts.map(p=>'Y'+p.year), [
+    { label:'Portfolio value', data:pts.map(p=>p.bal), borderColor:CHART_COLORS.accent, backgroundColor:CHART_COLORS.accentFill, fill:true, tension:.35, pointRadius:0, borderWidth:2.5 },
+    { label:'Amount invested', data:pts.map(p=>p.invested), borderColor:CHART_COLORS.amber, backgroundColor:'transparent', borderDash:[5,4], tension:.35, pointRadius:0, borderWidth:2 }
+  ]);
+}
+
+/* ---------- EMI ---------- */
+function updateEMI(){
+  const P=toINR(+$('emi-amt').value), R=+$('emi-rate').value, Y=+$('emi-yrs').value;
+  const r=R/1200, n=Y*12;
+  const emi = n<=0 ? 0 : r===0 ? P/n : P*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1);
+  const total = emi*n, interest = total-P;
+  $('emi-val').textContent = fmt(emi);
+  $('emi-int').textContent = fmt(interest);
+  $('emi-tot').textContent = fmt(total);
+  drawDonut('emi-chart', ['Principal','Interest'], [P, interest], [CHART_COLORS.teal, CHART_COLORS.rose]);
+}
+
+/* ---------- Inflation ---------- */
+function updateInf(){
+  const A=toINR(+$('inf-amt').value), f=+$('inf-rate').value/100, t=+$('inf-yrs').value;
+  const pts=[]; for(let y=0;y<=t;y++) pts.push({ y, cost:A*Math.pow(1+f,y), pp:A/Math.pow(1+f,y) });
+  const future = pts[t].cost, pp = pts[t].pp;
+  $('inf-fut').textContent = fmt(future);
+  $('inf-pp').textContent = fmt(pp);
+  const erodedPct = A > 0 ? (1-pp/A)*100 : 0;
+    $('inf-eros').textContent = fmt(A - pp) + ' (' + erodedPct.toFixed(2) + '%)';
+  drawLine('inf-chart', pts.map(p=>'Y'+p.y), [
+    { label:'Cost of today’s ' + fmt(A), data:pts.map(p=>p.cost), borderColor:CHART_COLORS.rose, backgroundColor:CHART_COLORS.roseFill, fill:true, tension:.35, pointRadius:0, borderWidth:2.5 },
+    { label:'Purchasing power', data:pts.map(p=>p.pp), borderColor:CHART_COLORS.teal, backgroundColor:'transparent', tension:.35, pointRadius:0, borderWidth:2 }
+  ]);
+}
+
+/* ---------- Education ---------- */
+function updateEdu(){
+  const age=+$('edu-age').value, target=+$('edu-target').value;
+  const yrs = Math.max(1, target - age);
+  const cost=toINR(+$('edu-cost').value), infl=+$('edu-infl').value/100, ret=+$('edu-ret').value/100, sav=toINR(+$('edu-sav').value);
+  const futureCost = cost * Math.pow(1+infl, yrs);
+  const savingsAtGoal = sav * Math.pow(1+ret, yrs);
+  const gap = Math.max(0, futureCost - savingsAtGoal);
+  const i = ret/12, n = yrs*12;
+  const reqSip = gap <= 0 ? 0 : i === 0 ? gap/n : gap * i / (((Math.pow(1+i,n)-1)) * (1+i));
+  $('edu-fut').textContent = fmt(futureCost);
+  $('edu-sip').textContent = reqSip === 0 ? 'Covered! 🎉' : fmt(reqSip);
+  $('edu-yrs').textContent = yrs + ' yrs';
+  const pts=[]; let bal = sav;
+  const monthly = reqSip;
+  for(let y=1; y<=yrs; y++){
+    for(let k=0;k<12;k++) bal = (bal + monthly) * (1+i);
+    pts.push({ y, corpus:bal, need: cost * Math.pow(1+infl, y) });
+  }
+  drawLine('edu-chart', pts.map(p=>'Y'+p.y), [
+    { label:'Projected cost', data:pts.map(p=>p.need), borderColor:CHART_COLORS.rose, backgroundColor:CHART_COLORS.roseFill, fill:true, tension:.3, pointRadius:0, borderWidth:2.5 },
+    { label:'Your corpus', data:pts.map(p=>p.corpus), borderColor:CHART_COLORS.teal, backgroundColor:'transparent', tension:.3, pointRadius:0, borderWidth:2.5 }
+  ]);
+}
+
+/* ---------- SWP ---------- */
+function swpCalc(corpus, wd, rate, years){
+  const i = rate/100/12;
+  const maxMonths = Math.max(0,Math.round(years*12));
+  const withdrawal = Math.max(0,wd);
+  let bal = Math.max(0,corpus), totalWithdrawn = 0, depleted = null;
+  const pts = [{ month:0, bal, withdrawn:0 }];
+  if(bal === 0 && withdrawal > 0) depleted = 0;
+  for(let m=1; m<=maxMonths && depleted === null; m++){
+    const available = bal*(1+i);
+    const paid = Math.min(withdrawal,available);
+    bal = Math.max(0,available-paid);
+    totalWithdrawn += paid;
+    const isDepleted = bal === 0 && withdrawal > 0;
+    if(m % 12 === 0 || m === maxMonths || isDepleted){
+      pts.push({ month:m, bal, withdrawn:totalWithdrawn });
+    }
+    if(isDepleted) depleted = m;
+  }
+  return { pts, depleted, finalBal:bal, totalWithdrawn, months:depleted === null ? maxMonths : depleted };
+}
+function updateSWP(){
+  const c=toINR(+$('swp-cor').value), w=toINR(+$('swp-wd').value), r=+$('swp-rate').value, y=+$('swp-yrs').value;
+  const { pts, depleted, finalBal, totalWithdrawn, months } = swpCalc(c, w, r, y);
+  $('swp-wtd').textContent = fmt(totalWithdrawn);
+  $('swp-rem').textContent = fmt(finalBal);
+  $('swp-dur').textContent = depleted !== null
+    ? (months < 24 ? months + ' mo' : (months/12).toFixed(2) + ' yrs')
+    : y + ' yrs ✓';
+  $('swp-dur-box').classList.toggle('rose', depleted !== null);
+  $('swp-dur-box').classList.toggle('teal', depleted === null);
+  drawLine('swp-chart', pts.map(p=>'Y'+(p.month/12).toFixed(2)), [
+    { label:'Remaining corpus', data:pts.map(p=>p.bal), borderColor: depleted !== null ? CHART_COLORS.rose : CHART_COLORS.accent, backgroundColor: depleted !== null ? CHART_COLORS.roseFill : CHART_COLORS.accentFill, fill:true, tension:.3, pointRadius:0, borderWidth:2.5 },
+    { label:'Total withdrawn', data:pts.map(p=>p.withdrawn), borderColor:CHART_COLORS.teal, backgroundColor:'transparent', tension:.3, pointRadius:0, borderWidth:2.5 }
+  ]);
+}
+
+/* ---------- Compound interest ---------- */
+function updateCI(){
+  const P=toINR(+$('ci-p').value), r=+$('ci-r').value/100, t=+$('ci-t').value, f=+$('ci-f').value;
+  const A = P * Math.pow(1 + r/f, f*t);
+  $('ci-pv').textContent = fmt(P);
+  $('ci-int').textContent = fmt(A - P);
+  $('ci-tot').textContent = fmt(A);
+  const pts=[]; for(let y=0;y<=t;y++) pts.push({ y, v: P * Math.pow(1 + r/f, f*y) });
+  drawLine('ci-chart', pts.map(p=>'Y'+p.y), [
+    { label:'Maturity value', data:pts.map(p=>p.v), borderColor:CHART_COLORS.accent, backgroundColor:CHART_COLORS.accentFill, fill:true, tension:.35, pointRadius:0, borderWidth:2.5 },
+    { label:'Principal', data:pts.map(()=>P), borderColor:CHART_COLORS.teal, backgroundColor:'transparent', borderDash:[5,4], tension:0, pointRadius:0, borderWidth:2 },
+    { label:'Interest earned', data:pts.map(p=>p.v-P), borderColor:CHART_COLORS.amber, backgroundColor:'transparent', tension:.35, pointRadius:0, borderWidth:2 }
+  ]);
+}
+
+/* ---------- currency UI ---------- */
+function buildCurSelects(){
+  document.querySelectorAll('.card.inputs').forEach(card => {
+    const h3 = card.querySelector('h3');
+    const wrap = document.createElement('div');
+    wrap.className = 'cur-field';
+    const lab = document.createElement('label');
+    lab.textContent = 'Currency';
+    const sel = document.createElement('select');
+    sel.className = 'cur-sel';
+    CURRENCIES.forEach(c => {
+      const o = document.createElement('option');
+      o.value = c[0];
+      o.textContent = c[0] + ' — ' + c[1] + ' (' + c[2] + ')';
+      if(c[0] === cur) o.selected = true;
+      sel.appendChild(o);
+    });
+    sel.addEventListener('change', () => setCurrency(sel.value));
+    const note = document.createElement('p');
+    note.className = 'note fx-note';
+    wrap.appendChild(lab); wrap.appendChild(sel); wrap.appendChild(note);
+    h3.after(wrap);
+  });
+}
+
+function applyMoneyLimits(){
+  const min = String(MONEY_MIN), max = String(MONEY_MAX);
+  MONEY_FIELDS.forEach(id => {
+    const range = $(id), number = $(id + '-n');
+    range.min = min;
+    range.max = max;
+    range.step = 'any';
+    if(number){
+      number.min = min;
+      number.max = max;
+      number.step = 'any';
+      const value = Math.min(MONEY_MAX, Math.max(MONEY_MIN, Number(number.value) || MONEY_MIN));
+      number.value = String(value);
+      range.value = String(value);
+    }
+  });
+  CAT_FIELDS.forEach(id => {
+    const number = $(id);
+    number.min = min;
+    number.max = max;
+    number.step = 'any';
+    number.value = String(Math.min(MONEY_MAX, Math.max(MONEY_MIN, Number(number.value) || MONEY_MIN)));
+  });
+}
+function updateCurUI(){
+  document.querySelectorAll('.cur-sym').forEach(s => s.textContent = SYMBOL[cur]);
+  const per = cur === 'INR' ? '' : '1 ' + cur + ' = ₹' + (1/FX[cur]).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}) + (fxStatus === 'live' ? ' · live' : ' · built-in');
+  const note = cur === 'INR' ? 'Base currency — amounts are entered in ₹' : per;
+  document.querySelectorAll('.fx-note').forEach(n => n.textContent = note);
+  const pill = $('fx-pill');
+  pill.textContent = cur === 'INR'
+    ? (fxStatus === 'live' ? 'FX live ✓ · 1 USD = ₹' + (1/FX.USD).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}) : 'FX offline · built-in rates')
+    : (fxStatus === 'live' ? 'FX live ✓ · ' + per : 'FX offline · ' + per);
+}
+
+function setCurrency(code){
+  if(!FX[code] || code === cur) return;
+  const factor = FX[code] / FX[cur];
+  cur = code;
+  MONEY_FIELDS.forEach(f => {
+    const n = $('' + f + '-n');
+    if(n){
+      const v = Math.min(MONEY_MAX, Math.max(MONEY_MIN, inputValue(f + '-n') * factor));
+      n.value = v.toFixed(2);
+    }
+  });
+  CAT_FIELDS.forEach(f => {
+    const n = $(f);
+    const v = Math.min(MONEY_MAX, Math.max(MONEY_MIN, inputValue(f) * factor));
+    n.value = v.toFixed(2);
+  });
+  applyMoneyLimits();
+  MONEY_FIELDS.forEach(f => { const n = $(f + '-n'); if(n) $(f).value = n.value; });
+  document.querySelectorAll('.cur-sel').forEach(s => s.value = cur);
+  updateCurUI();
+  updateAll();
+}
+
+async function fetchRates(){
+  try{
+    const res = await fetch('https://open.er-api.com/v6/latest/INR');
+    const j = await res.json();
+    if(j && j.result === 'success' && j.rates){
+      let ok = 0;
+      CURRENCIES.forEach(c => { if(j.rates[c[0]]){ FX[c[0]] = j.rates[c[0]]; ok++; } });
+      if(ok){
+        fxStatus = 'live';
+        applyMoneyLimits();
+        updateCurUI();
+        updateAll();
+      }
+    }
+  }catch(e){ /* keep built-in rates */ }
+  updateCurUI();
+}
+
+/* ---------- wiring ---------- */
+bindPair('sip-amt','sip-amt-n',updateSIP); bindPair('sip-rate','sip-rate-n',updateSIP);
+bindPair('sip-yrs','sip-yrs-n',updateSIP); bindPair('sip-step','sip-step-n',updateSIP);
+bindPair('emi-amt','emi-amt-n',updateEMI); bindPair('emi-rate','emi-rate-n',updateEMI); bindPair('emi-yrs','emi-yrs-n',updateEMI);
+bindPair('inf-amt','inf-amt-n',updateInf); bindPair('inf-rate','inf-rate-n',updateInf); bindPair('inf-yrs','inf-yrs-n',updateInf);
+bindPair('edu-age','edu-age-n',updateEdu); bindPair('edu-target','edu-target-n',updateEdu); bindPair('edu-cost','edu-cost-n',updateEdu);
+bindPair('edu-infl','edu-infl-n',updateEdu); bindPair('edu-ret','edu-ret-n',updateEdu); bindPair('edu-sav','edu-sav-n',updateEdu);
+bindPair('swp-cor','swp-cor-n',updateSWP); bindPair('swp-wd','swp-wd-n',updateSWP); bindPair('swp-rate','swp-rate-n',updateSWP); bindPair('swp-yrs','swp-yrs-n',updateSWP);
+bindPair('ci-p','ci-p-n',updateCI); bindPair('ci-r','ci-r-n',updateCI); bindPair('ci-t','ci-t-n',updateCI);
+$('ci-f').addEventListener('change', updateCI);
+
+/* ---------- navigation ---------- */
+const logoTrigger = $('logo-trigger');
+const logoModal = $('logo-modal');
+logoTrigger.addEventListener('click', () => logoModal.showModal());
+const logoPreview = logoModal.querySelector('img');
+logoModal.addEventListener('click', e => {
+  if(e.target !== logoPreview) logoModal.close();
+});
+logoModal.addEventListener('close', () => logoTrigger.focus());
+
+/* ---------- PDF reports ---------- */
+function pdfSafeText(value){
+  return String(value ?? '')
+    .replace(/₹/g,'INR ').replace(/€/g,'EUR ').replace(/£/g,'GBP ').replace(/¥/g,'JPY ')
+    .replace(/[–—]/g,'-').replace(/[’‘]/g,"'").replace(/✓/g,'');
+}
+
+const activePdfObjectUrls = new Set();
+window.addEventListener('pagehide',() => {
+  activePdfObjectUrls.forEach(url => URL.revokeObjectURL(url));
+  activePdfObjectUrls.clear();
+});
+
+async function downloadModulePDF(module, button, status, progress, openButton){
+  if(module.dataset.pdfEdited !== 'true' || button.disabled) return;
+  const jsPDF = window.jspdf && window.jspdf.jsPDF;
+  if(!jsPDF){
+    status.textContent = 'PDF export is unavailable right now. Check your connection and try again.';
+    return;
+  }
+
+  const progressValue = progress.querySelector('.pdf-progress-value');
+  const setProgress = (value,label) => {
+    progress.style.setProperty('--progress',value + '%');
+    progress.setAttribute('aria-valuenow',String(value));
+    progress.setAttribute('aria-valuetext',label);
+    progressValue.textContent = value + '%';
+  };
+  const paintProgress = () => new Promise(resolve => requestAnimationFrame(resolve));
+  button.disabled = true;
+  button.textContent = 'Preparing PDF…';
+  status.textContent = 'Preparing your personalized report…';
+  setProgress(5,'Starting PDF generation');
+  try{
+    await paintProgress();
+    const pdf = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const margin = 17;
+    const contentWidth = pageWidth - margin * 2;
+    let y = 20;
+    const newPageIfNeeded = height => {
+      if(y + height > pageHeight - margin){
+        pdf.addPage();
+        y = margin;
+      }
+    };
+    const title = module.querySelector('.module-head h2')?.innerText.replace(/\s+/g,' ').trim() || 'Calculator results';
+    const subtitle = module.querySelector('.module-head p')?.innerText.replace(/\s+/g,' ').trim() || '';
+
+    pdf.setFont('helvetica','bold');
+    pdf.setFontSize(18);
+    pdf.setTextColor(30,41,59);
+    const titleLines = pdf.splitTextToSize(pdfSafeText(title),contentWidth);
+    pdf.text(titleLines,margin,y);
+    y += titleLines.length * 8 + 2;
+    pdf.setFont('helvetica','normal');
+    pdf.setFontSize(9);
+    pdf.setTextColor(100,116,139);
+    const generated = 'Generated ' + new Date().toLocaleString('en-IN');
+    pdf.text(pdfSafeText(generated),margin,y);
+    y += 6;
+    if(subtitle){
+      const subtitleLines = pdf.splitTextToSize(pdfSafeText(subtitle),contentWidth);
+      pdf.text(subtitleLines,margin,y);
+      y += subtitleLines.length * 4.5 + 5;
+    }
+    pdf.setDrawColor(226,232,240);
+    pdf.line(margin,y,pageWidth-margin,y);
+    y += 8;
+    setProgress(15,'Report heading created');
+    await paintProgress();
+
+    const addSection = text => {
+      newPageIfNeeded(12);
+      pdf.setFont('helvetica','bold');
+      pdf.setFontSize(12);
+      pdf.setTextColor(30,41,59);
+      pdf.text(text,margin,y);
+      y += 7;
+    };
+    const addRows = rows => {
+      pdf.setFont('helvetica','normal');
+      pdf.setFontSize(9);
+      pdf.setTextColor(51,65,85);
+      rows.forEach(([label,value]) => {
+        const lines = pdf.splitTextToSize(pdfSafeText(label + ': ' + value),contentWidth);
+        const rowHeight = lines.length * 5 + 2;
+        newPageIfNeeded(rowHeight);
+        pdf.text(lines,margin,y);
+        y += rowHeight;
+      });
+    };
+
+    addSection('Your details');
+    const inputRows = [...module.querySelectorAll('.inputs input[type="number"], .inputs select')].map(control => {
+      const row = control.closest('.field, .cat-row');
+      const label = row?.querySelector('label')?.textContent || row?.querySelector('span')?.textContent || control.id;
+      const value = control.tagName === 'SELECT'
+        ? control.options[control.selectedIndex]?.textContent || control.value
+        : control.value;
+      return [label.replace(/\s+/g,' ').trim(),value];
+    });
+    addRows(inputRows);
+    setProgress(38,'Input details added');
+    await paintProgress();
+
+    addSection('Results');
+    const resultRows = [...module.querySelectorAll('.results .stat')].map(stat => [
+      stat.querySelector('.k')?.textContent.trim() || 'Result',
+      stat.querySelector('.v')?.textContent.trim() || '—'
+    ]);
+    addRows(resultRows);
+    setProgress(58,'Calculator results added');
+    await paintProgress();
+
+    const canvas = module.querySelector('.chart-wrap canvas');
+    if(canvas && canvas.width && canvas.height){
+      try{
+        const chartImage = canvas.toDataURL('image/png');
+        const maxChartHeight = 82;
+        const ratio = canvas.width / canvas.height;
+        const chartWidth = Math.min(contentWidth,maxChartHeight * ratio);
+        const chartHeight = chartWidth / ratio;
+        newPageIfNeeded(chartHeight + 16);
+        addSection('Projection chart');
+        pdf.addImage(chartImage,'PNG',margin,y,chartWidth,chartHeight);
+      }catch(chartError){
+        console.warn('Could not include the calculator chart in the PDF.',chartError);
+      }
+    }
+    setProgress(82,'Projection chart added');
+    await paintProgress();
+
+    const pdfBlob = pdf.output('blob');
+    setProgress(95,'PDF file generated');
+    await paintProgress();
+    const objectUrl = URL.createObjectURL(pdfBlob);
+    const downloadLink = document.createElement('a');
+    downloadLink.href = objectUrl;
+    downloadLink.download = 'wealth-engine-' + module.id + '-results.pdf';
+    downloadLink.style.display = 'none';
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    downloadLink.remove();
+    const previousObjectUrl = module._pdfObjectUrl;
+    module._pdfObjectUrl = objectUrl;
+    activePdfObjectUrls.add(objectUrl);
+    if(previousObjectUrl){
+      window.setTimeout(() => {
+        URL.revokeObjectURL(previousObjectUrl);
+        activePdfObjectUrls.delete(previousObjectUrl);
+      },60000);
+    }
+    openButton.hidden = false;
+    openButton.disabled = false;
+    setProgress(100,'Browser download triggered');
+    status.textContent = 'PDF download started. You can also open the generated PDF.';
+  }catch(error){
+    console.error('PDF export failed.',error);
+    status.textContent = 'Could not generate the PDF. Please try again.';
+    progress.setAttribute('aria-valuetext','PDF export failed');
+  }finally{
+    button.disabled = false;
+    button.textContent = 'Download Report';
+  }
+}
+
+function setupPDFDownloads(){
+  document.querySelectorAll('.module').forEach(module => {
+    const resultGrid = module.querySelector('.results');
+    const inputs = module.querySelector('.inputs');
+    if(!resultGrid || !inputs) return;
+
+    const actionRow = document.createElement('div');
+    actionRow.className = 'pdf-download-row';
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'pdf-download';
+    button.textContent = 'Download Report';
+    button.disabled = true;
+    const progress = document.createElement('div');
+    progress.className = 'pdf-progress';
+    progress.setAttribute('role','progressbar');
+    progress.setAttribute('aria-label','PDF generation and download progress');
+    progress.setAttribute('aria-valuemin','0');
+    progress.setAttribute('aria-valuemax','100');
+    progress.setAttribute('aria-valuenow','0');
+    progress.setAttribute('aria-valuetext','Waiting for PDF export');
+    const progressRing = document.createElement('span');
+    progressRing.className = 'pdf-progress-ring';
+    const progressValue = document.createElement('span');
+    progressValue.className = 'pdf-progress-value';
+    progressValue.textContent = '0%';
+    progressRing.appendChild(progressValue);
+    const progressLabel = document.createElement('span');
+    progressLabel.className = 'pdf-progress-label';
+    progressLabel.textContent = 'File progress';
+    progress.append(progressRing,progressLabel);
+    const openButton = document.createElement('button');
+    openButton.type = 'button';
+    openButton.className = 'pdf-open';
+    openButton.textContent = 'Open PDF';
+    openButton.disabled = true;
+    openButton.hidden = true;
+    actionRow.append(button,progress,openButton);
+    const status = document.createElement('p');
+    status.className = 'pdf-download-status';
+    status.id = 'pdf-status-' + module.id;
+    status.setAttribute('role','status');
+    status.setAttribute('aria-live','polite');
+    status.textContent = 'Edit an input to enable report download.';
+    button.setAttribute('aria-describedby',status.id);
+    resultGrid.insertAdjacentElement('afterend',actionRow);
+    actionRow.insertAdjacentElement('afterend',status);
+
+    const markEdited = () => {
+      module.dataset.pdfEdited = 'true';
+      button.disabled = false;
+      progress.style.setProperty('--progress','0%');
+      progress.setAttribute('aria-valuenow','0');
+      progress.setAttribute('aria-valuetext','Inputs changed; waiting for PDF export');
+      progressValue.textContent = '0%';
+      openButton.disabled = true;
+      openButton.hidden = true;
+      status.textContent = '';
+    };
+    inputs.addEventListener('input',markEdited);
+    inputs.addEventListener('change',markEdited);
+    button.addEventListener('click',() => downloadModulePDF(module,button,status,progress,openButton));
+    openButton.addEventListener('click',() => {
+      if(module._pdfObjectUrl && !openButton.disabled){
+        window.open(module._pdfObjectUrl,'_blank','noopener');
+      }
+    });
+  });
+}
+
+const updaters = { sip:updateSIP, emi:updateEMI, inflation:updateInf, education:updateEdu, swp:updateSWP, ci:updateCI, debt:updateDebt, budget:updateBudget };
+function updateAll(){ Object.values(updaters).forEach(fn => fn()); }
+$('tabs').addEventListener('click', e => {
+  const btn = e.target.closest('button'); if(!btn) return;
+  document.querySelectorAll('#tabs button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.module').forEach(m=>m.classList.remove('active'));
+  const id = btn.dataset.target;
+  $(id).classList.add('active');
+  if(updaters[id]) updaters[id]();  // calculators only
+  window.scrollTo({ top:0, behavior:'smooth' });
+});
+
+
+/* ---------- AI Wealth Advisor: secure AI + robust voice ---------- */
+(function setupAdvisor(){
+  const lang=$('advisor-lang'), voiceBtn=$('advisor-voice'), manualBtn=$('advisor-manual');
+  const status=$('advisor-voice-status'), chat=$('advisor-chat'), input=$('advisor-input'), send=$('advisor-send');
+  if(!lang||!voiceBtn||!manualBtn||!status||!chat||!input||!send) return;
+
+  const locales={'en-IN':'en-IN','hi-IN':'hi-IN','mr-IN':'mr-IN'};
+  const AI_ENDPOINT=window.WEALTH_ENGINE_AI_ENDPOINT || '/api/wealth-advisor';
+  let recognition=null, listening=false, history=[];
+
+  function addMessage(text,who){const d=document.createElement('div');d.className='advisor-msg '+who;d.textContent=text;chat.appendChild(d);chat.scrollTop=chat.scrollHeight;return d;}
+  function langName(){return lang.value==='hi-IN'?'Hindi':lang.value==='mr-IN'?'Marathi':'English';}
+  function setStatus(t,error=false){status.textContent=t;status.style.color=error?'var(--rose)':'var(--muted)';}
+  function context(){
+    const ids=['sip-amt','sip-rate','sip-yrs','sip-step','emi-amt','emi-rate','emi-yrs','inf-amt','inf-rate','inf-yrs','edu-age','edu-target','edu-cost','edu-infl','edu-ret','edu-sav','swp-cor','swp-wd','swp-rate','swp-yrs','ci-p','ci-r','ci-t','dbt-amt','dbt-rate','dbt-pay','bud-inc','bud-hous','bud-food','bud-trns','bud-util','bud-ins','bud-edu','bud-fun','bud-othr'];
+    const x={};ids.forEach(id=>{const e=$(id);if(e)x[id]=e.value;});return x;
+  }
+  function instruction(){return `You are Wealth Engine AI Wealth Advisor. Reply in ${langName()} unless the user asks otherwise. Provide educational, India-focused financial analysis. Show assumptions, calculations, alternatives, risks, liquidity, inflation, taxes/costs, debt and downside scenarios. Ask for missing high-impact facts before precise allocations. Never guarantee returns or fabricate live data. If current rates/prices/rules are required, use the server's current-data capability or clearly say they must be verified. Give a concise action plan and explain the reasoning.`;}
+  async function ask(text){
+    text=(text||'').trim();if(!text)return;
+    addMessage(text,'user');input.value='';send.disabled=true;voiceBtn.disabled=true;
+    const thinking=addMessage('Analysing your question, goals and calculator data…','ai');
+    setStatus('AI is analysing in real time…');
+    try{
+      const r=await fetch(AI_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:text,language:langName(),locale:lang.value,system_instruction:instruction(),calculator_context:context(),conversation:history.slice(-12),timestamp:new Date().toISOString()})});
+      let data={};try{data=await r.json();}catch(e){}
+      if(!r.ok)throw new Error(data.error||`AI service unavailable (${r.status})`);
+      const answer=String(data.answer||data.text||'').trim();if(!answer)throw new Error('Empty AI response');
+      thinking.textContent=answer;history.push({role:'user',text},{role:'assistant',text:answer});if(history.length>24)history=history.slice(-24);setStatus('AI report updated just now.');speak(answer);
+    }catch(e){thinking.textContent='Secure AI server is not connected yet. Voice and Manual input are ready. Please check the backend deployment.';setStatus(e.message||'AI service unavailable.',true);}
+    finally{send.disabled=false;voiceBtn.disabled=false;}
+  }
+  function speak(text){if(!('speechSynthesis'in window))return;window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang=locales[lang.value];u.rate=.96;window.speechSynthesis.speak(u);}
+  function stop(){if(recognition){try{recognition.stop();}catch(e){}}listening=false;voiceBtn.classList.remove('listening');voiceBtn.textContent='🎙️ Voice Talk';}
+  function start(){
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!SR){setStatus('Voice input is not supported by this browser. Try Chrome/Edge or use Manual mode.',true);return;}
+    if(!window.isSecureContext && !['localhost','127.0.0.1'].includes(location.hostname)){setStatus('Voice input needs an HTTPS page. Open the hosted HTTPS version and allow microphone access.',true);return;}
+    stop();recognition=new SR();recognition.lang=locales[lang.value];recognition.interimResults=false;recognition.continuous=false;recognition.maxAlternatives=1;
+    recognition.onstart=()=>{listening=true;voiceBtn.classList.add('listening');voiceBtn.textContent='⏹ Stop Voice';setStatus('Listening in '+langName()+'… speak now.');};
+    recognition.onresult=e=>{const t=e?.results?.[0]?.[0]?.transcript?.trim();if(!t){setStatus('No clear speech detected. Try again.',true);return;}input.value=t;setStatus('I heard: '+t);ask(t);};
+    recognition.onerror=e=>{const m={'not-allowed':'Microphone permission was denied. Allow microphone access for this site and try again.','service-not-allowed':'Speech recognition is blocked by the browser.','audio-capture':'No working microphone was found.','no-speech':'No speech was detected. Please speak again.','network':'Speech recognition network error. Check your connection.'};if(e.error!=='aborted')setStatus(m[e.error]||('Voice input error: '+e.error),true);};
+    recognition.onend=()=>{listening=false;voiceBtn.classList.remove('listening');voiceBtn.textContent='🎙️ Voice Talk';};
+    try{recognition.start();}catch(e){setStatus('Voice could not start. Check microphone permission, then try again.',true);}
+  }
+  voiceBtn.addEventListener('click',()=>listening?stop():start());
+  manualBtn.addEventListener('click',()=>{stop();input.focus();setStatus('Manual mode selected. Type your question and tap Send.');});
+  lang.addEventListener('change',()=>{stop();setStatus('Voice language set to '+langName()+'. Tap Voice Talk to speak.');input.placeholder=lang.value==='hi-IN'?'उदाहरण: मेरे पास ₹10 लाख हैं, मुझे कहाँ निवेश करना चाहिए?':lang.value==='mr-IN'?'उदाहरण: माझ्याकडे ₹10 लाख आहेत, मी कुठे गुंतवणूक करू?':'Example: I have ₹10 lakh. Where should I invest?';});
+  send.addEventListener('click',()=>ask(input.value));
+  input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();ask(input.value);}});
+  document.querySelectorAll('.advisor-prompt').forEach(b=>b.addEventListener('click',()=>{input.value=b.dataset.prompt||'';input.focus();}));
+})();
+
+/* ---------- init ---------- */
+buildCurSelects();
+setupPDFDownloads();
+applyMoneyLimits();
+formatDecimalInputs();
+updateAll();
+updateCurUI();
+fetchRates();
+</script>
+</body>
+</html>
